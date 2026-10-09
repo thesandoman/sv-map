@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SV Map demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="../src/sv-map.css" />
+<style>
+  :root { color-scheme: light dark; }
+  body { margin: 0; font-family: "IBM Plex Sans Thai", system-ui, sans-serif; background: #faf7f2; color: #1d2321; }
+  @media (prefers-color-scheme: dark) { body { background: #111614; color: #ecf2ef; } }
+  main { max-width: 760px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 1.4rem; margin: .2rem 0 .4rem; }
+  p.lead { margin: 0 0 12px; opacity: .8; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+  .bar button { font: inherit; min-height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid #ccc; background: transparent; color: inherit; cursor: pointer; }
+  .bar button[aria-pressed="true"] { background: #1d2321; color: #fff; border-color: #1d2321; }
+  @media (prefers-color-scheme: dark) { .bar button[aria-pressed="true"] { background: #ecf2ef; color: #111614; } }
+  /* App 2 wears its own colours: only CSS variables change. */
+  #map.city { --svm-brand: #2563eb; --svm-highlight: #dc2626; --svm-radius: 6px; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div class="bar">
+    <button type="button" data-app="social" aria-pressed="true">App 1 · Social events</button>
+    <button type="button" data-app="city" aria-pressed="false">App 2 · City reports</button>
+    <button type="button" id="lang">EN</button>
+  </div>
+  <div id="map"></div>
+</main>
+<script type="module">
+  import { createMap } from "../src/sv-map.js";
+  import { BANGKOK_CENTER, BANGKOK_PAN_LIMIT, bangkokDistrict } from "../presets/bangkok.js";
+
+  const area = (id) => { const d = bangkokDistrict(id); return { lat: d.lat, lng: d.lng, precision: "area" }; };
+  let lang = "th", app = "social", m = null;
+  const T = (th, en) => (lang === "en" ? en : th);
+
+  // App 1: a social app's events (tags, cost, "you're going").
+  const social = () => [
+    { id: "e1", lat: 13.7314, lng: 100.5414, title: T("เดินเล่นสวนลุมพินี", "Lumphini Park walk"), icon: "🚶", tags: ["walk"], href: "#e1",
+      lines: [T("ส. 18:00", "Sat 18:00"), "Lumphini Park"], badges: [{ text: T("เหลือ 4 ที่", "4 spots left"), tone: "ok" }, { text: T("ฟรี", "Free") }], free: true, highlight: true },
+    { id: "e2", lat: 13.7440, lng: 100.5048, title: T("ตระเวนกินเยาวราช", "Yaowarat food walk"), icon: "🍜", tags: ["food", "walk"], href: "#e2",
+      lines: [T("อา. 17:00", "Sun 17:00"), "Yaowarat Road"], badges: [{ text: "฿150" }] },
+    { id: "e3", ...area("phaya_thai"), title: T("บอร์ดเกมคืนวันศุกร์", "Friday board games"), icon: "🎲", tags: ["games"], href: "#e3",
+      lines: [T("ศ. 19:00", "Fri 19:00"), T("คาเฟ่ย่านอารีย์", "Café in Ari")], badges: [{ text: T("เต็มแล้ว", "Full"), tone: "warn" }], muted: true, free: true },
+    { id: "e4", ...area("phaya_thai"), title: T("แลกเปลี่ยนภาษา", "Language table"), icon: "💬", tags: ["language"], href: "#e4",
+      lines: [T("พ. 19:00", "Wed 19:00")], badges: [{ text: T("ฟรี", "Free") }], free: true },
+    { id: "e5", lat: 13.7299, lng: 100.5578, title: T("อาสาปลูกต้นไม้", "Tree-planting volunteers"), icon: "🤲", tags: ["volunteer"], href: "#e5",
+      lines: [T("ส. 08:00", "Sat 08:00"), "Benchakitti Park"], badges: [{ text: T("ฟรี", "Free") }], free: true },
+  ];
+  // App 2: a city app's reports (different tags, colours and card).
+  const city = () => [
+    { id: "r1", lat: 13.7468, lng: 100.5346, title: T("น้ำท่วมขัง ระดับเข่า", "Knee-deep water"), icon: "🌊", tags: ["flood"],
+      lines: [T("10 นาทีที่แล้ว", "10 min ago"), "Siam"], badges: [{ text: T("ยืนยันแล้ว", "Confirmed"), tone: "ok" }] },
+    { id: "r2", lat: 13.7650, lng: 100.5380, title: T("ต้นไม้ล้มขวางถนน", "Fallen tree"), icon: "🌳", tags: ["road"],
+      lines: [T("1 ชม.ที่แล้ว", "1 h ago"), "Ratchathewi"], highlight: true },
+    { id: "r3", ...area("bang_kapi"), title: T("ไฟดับ", "Power cut"), icon: "⚡", tags: ["power"], lines: [T("ทั้งเขตบางกะปิ", "Across Bang Kapi")] },
+    { id: "r4", lat: 13.7230, lng: 100.5290, title: T("หลุมบนถนน", "Pothole"), icon: "🕳", tags: ["road"], lines: [T("เมื่อวาน", "Yesterday")], muted: true },
+  ];
+  let seq = 0;
+  async function build() {
+    const mine = ++seq;
+    m?.destroy();
+    m = null;
+    const el = document.getElementById("map");
+    el.className = app === "city" ? "city" : "";
+    document.documentElement.lang = lang;
+    document.getElementById("lang").textContent = lang === "th" ? "EN" : "ไทย";
+    document.getElementById("title").textContent = app === "social" ? T("สัปดาห์นี้ทำอะไรดี?", "What's on this week?") : T("รายงานจากประชาชน", "Reports from residents");
+    document.getElementById("lead").textContent = T("แผนที่เดียวกัน ต่างแค่ข้อมูล สี และคำ", "The same map: only the data, colours and words change.");
+    const next = await createMap(el, {
+      lang,
+      center: BANGKOK_CENTER,
+      panLimit: BANGKOK_PAN_LIMIT,
+      points: app === "social" ? social() : city(),
+      tagLabels: app === "social"
+        ? { walk: { label: T("เดินเล่น", "Walks"), icon: "🚶" }, food: { label: T("อาหาร", "Food"), icon: "🍜" }, games: { label: T("บอร์ดเกม", "Games"), icon: "🎲" }, language: { label: T("ภาษา", "Language"), icon: "💬" }, volunteer: { label: T("อาสา", "Volunteer"), icon: "🤲" } }
+        : { flood: { label: T("น้ำท่วม", "Flooding"), icon: "🌊" }, road: { label: T("ถนน", "Roads"), icon: "🚧" }, power: { label: T("ไฟฟ้า", "Power"), icon: "⚡" } },
+      extraChips: app === "social" ? [{ value: "free", label: T("ฟรี", "Free"), icon: "💸", test: (p) => p.free }] : [],
+      legend: app === "social"
+        ? [{ kind: "exact" }, { kind: "area", label: T("ระดับเขต", "District area") }, { kind: "highlight", label: T("กิจกรรมของฉัน", "My events") }]
+        : [{ kind: "exact", label: T("จุดที่รายงาน", "Reported spot") }, { kind: "area" }, { kind: "highlight", label: T("รายงานของฉัน", "My reports") }],
+      groupTitle: (items) => T(`${items.length} รายการที่นี่`, `${items.length} here`),
+    });
+    if (mine === seq) m = next;
+  }
+  document.querySelector(".bar").addEventListener("click", (e) => {
+    const b = e.target.closest("button");
+    if (!b) return;
+    if (b.id === "lang") lang = lang === "th" ? "en" : "th";
+    else { app = b.dataset.app; document.querySelectorAll("[data-app]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); }
+    build();
+  });
+  build();
+</script>
+</body>
+</html>

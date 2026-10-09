@@ -1,0 +1,16 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="../src/sv-map.css"></head>
+<body><div id="map"></div><pre id="out"></pre>
+<script type="module">
+  import { createMap } from "../src/sv-map.js";
+  const log = [];
+  const m = await createMap(document.getElementById("map"), { lang: "en",
+    points: [{ id: "a", lat: 13.73, lng: 100.54, title: "A", tags: ["x"] }, { id: "b", lat: 13.75, lng: 100.50, title: "B", tags: ["y"] }],
+    onFilter: (v) => log.push("visible:" + v.map((p) => p.id).join("")), onSelect: (s) => log.push("selected:" + s.map((p) => p.id).join("")) });
+  m.setFilter("x");
+  m.setPoints([{ id: "c", lat: 13.76, lng: 100.52, title: "<b>C</b>", tags: ["x"] }]);
+  m.select("c");
+  log.push("sheetTitle:" + document.querySelector(".svm-sheet-h").textContent, "pins:" + document.querySelectorAll(".svm-pin").length);
+  m.destroy();
+  log.push("afterDestroy:" + document.getElementById("map").innerHTML.length);
+  document.getElementById("out").textContent = log.join("\n");
+</script></body></html>
