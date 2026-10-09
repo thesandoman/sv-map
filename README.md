@@ -38,6 +38,21 @@ cd ~/flood/sv-map && python3 -m http.server 8891
 
 Then open http://localhost:8891/demo/
 
+## Get it into another project
+
+The code lives at https://github.com/thesandoman/sv-map (private). Either:
+
+- **Install it** (projects with a `package.json`), then import `sv-map`, `sv-map/places`,
+  `sv-map/presets/bangkok` and `sv-map/sv-map.css`:
+
+```bash
+npm install github:thesandoman/sv-map
+```
+
+- **Or copy** the `src/` and `presets/` folders into the project.
+
+While the repo is private, only accounts you give access to can install it.
+
 ## Use it in a page (3 steps)
 
 1. Copy `src/` (and `presets/` if you're in Bangkok) into the app.
