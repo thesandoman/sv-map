@@ -12,12 +12,16 @@
   "files": [
     "src",
     "presets",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "demo": "python3 -m http.server 8891"
   },
-  "license": "UNLICENSED",
-  "private": true
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thesandoman/sv-map.git"
+  }
 }

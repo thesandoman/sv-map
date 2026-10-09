@@ -40,7 +40,7 @@ Then open http://localhost:8891/demo/
 
 ## Get it into another project
 
-The code lives at https://github.com/thesandoman/sv-map (private). Either:
+The code lives at https://github.com/thesandoman/sv-map. Either:
 
 - **Install it** (projects with a `package.json`), then import `sv-map`, `sv-map/places`,
   `sv-map/presets/bangkok` and `sv-map/sv-map.css`:
@@ -50,8 +50,6 @@ npm install github:thesandoman/sv-map
 ```
 
 - **Or copy** the `src/` and `presets/` folders into the project.
-
-While the repo is private, only accounts you give access to can install it.
 
 ## Use it in a page (3 steps)
 
@@ -203,3 +201,7 @@ cd ~/flood/sv-map && npm test
 
 Map engine: MapLibre GL (BSD). Basemap tiles: Esri, HERE, Garmin and OpenStreetMap
 contributors. Bangkok district positions: OpenStreetMap (ODbL).
+
+## License
+
+MIT, see [LICENSE](LICENSE). The map engine and map data keep their own licences (above).
